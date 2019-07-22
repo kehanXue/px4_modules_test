@@ -137,7 +137,9 @@ include_directories(
 add_executable(px4_modules_test_node
         src/px4_modules_test_node.cpp
         src/PX4Interface.h
-        src/PX4Interface.cpp)
+        src/PX4Interface.cpp
+        src/PIDController.h
+        src/PIDController.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the

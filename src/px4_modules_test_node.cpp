@@ -14,6 +14,7 @@
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
 #include "PX4Interface.h"
+#include "PIDController.h"
 
 mavros_msgs::State current_state;
 void state_cb(const mavros_msgs::State::ConstPtr& msg){
@@ -43,18 +44,24 @@ int main(int argc, char **argv)
     vwpp::PX4Interface::getInstance()->switchOffboard();
     vwpp::PX4Interface::getInstance()->unlockVehicle();
 
-    geometry_msgs::Twist cmd_vel;
-    cmd_vel.linear.x = 0;
-    cmd_vel.linear.y = 0;
-    cmd_vel.linear.z = 1;
 
+
+
+    vwpp::PIDController pid_controller_z(1.0, 0, 1.0);
+    pid_controller_z.setTarget(2.);
 
     while (ros::ok())
     {
-        vwpp::PX4Interface::getInstance()->publishLocalVel(cmd_vel);
-        // vwpp::PX4Interface::getInstance()->publishLocalPose(temp_pose);
         vwpp::PX4Interface::getInstance()->update();
-        ROS_INFO("current z: %lf", vwpp::PX4Interface::getInstance()->getCurZ());
+
+        pid_controller_z.update(vwpp::PX4Interface::getInstance()->getCurZ());
+
+        geometry_msgs::Twist cmd_vel;
+        cmd_vel.linear.x = 0;
+        cmd_vel.linear.y = 0;
+        cmd_vel.linear.z = pid_controller_z.output();
+        vwpp::PX4Interface::getInstance()->publishLocalVel(cmd_vel);
+
         rate.sleep();
     }
 
