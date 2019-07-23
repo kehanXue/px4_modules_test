@@ -139,7 +139,7 @@ add_executable(px4_modules_test_node
         src/PX4Interface.h
         src/PX4Interface.cpp
         src/PIDController.h
-        src/PIDController.cpp)
+        src/PIDController.cpp src/utils.cpp src/utils.h)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
