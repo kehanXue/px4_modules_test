@@ -55,9 +55,9 @@ int main(int argc, char** argv)
     vwpp::PX4Interface::getInstance()->unlockVehicle();
 
 
-    vwpp::PIDController pid_controller_x(1.0, 0, 1.4);
+    vwpp::PIDController pid_controller_x(1.0, 0, 1.4, true, 0.8);
     vwpp::PIDController pid_controller_y(1.0, 0, 1.4);
-    vwpp::PIDController pid_controller_z(3.0, 0, 2.8);
+    vwpp::PIDController pid_controller_z(3.0, 0, 3.4);
     vwpp::PIDController pid_controller_yaw(0.5, 0, 1.2);
 
 
@@ -79,7 +79,7 @@ int main(int argc, char** argv)
         if (fabs(vwpp::PX4Interface::getInstance()->getCurZ() - pid_controller_z.getTarget()) <= 0.10)
         {
             cnt++;
-            if (cnt >= 15)
+            if (cnt >= 25)
             {
                 pid_controller_x.setTarget(3.0);
                 cnt = 0;
