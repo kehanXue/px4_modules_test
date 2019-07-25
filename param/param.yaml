@@ -1,0 +1,17 @@
+!!python/object/new:dynamic_reconfigure.encoding.Config
+dictitems:
+  altitude_kp: 4.1339999999999995
+  groups: !!python/object/new:dynamic_reconfigure.encoding.Config
+    dictitems:
+      altitude_kp: 4.1339999999999995
+      groups: !!python/object/new:dynamic_reconfigure.encoding.Config
+        state: []
+      id: 0
+      name: Default
+      parameters: !!python/object/new:dynamic_reconfigure.encoding.Config
+        state: []
+      parent: 0
+      state: true
+      type: ''
+    state: []
+state: []

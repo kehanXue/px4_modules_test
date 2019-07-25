@@ -15,17 +15,22 @@
 #include <mavros_msgs/State.h>
 #include <cmath>
 #include <tf/transform_listener.h>
+#include <dynamic_reconfigure/server.h>
 
+
+#include "px4_modules_test/fira_test_dynamic_cfgConfig.h"
 #include "PX4Interface.h"
 #include "PIDController.h"
 #include "utils.h"
 
 mavros_msgs::State current_state;
 
+double_t altitude_p = 0;
 
-void state_cb(const mavros_msgs::State::ConstPtr &msg)
+void reconfig_cb(px4_modules_test::fira_test_dynamic_cfgConfig &config, uint32_t level)
 {
-    current_state = *msg;
+    altitude_p = config.altitude_kp;
+    ROS_INFO("Changed altitude: %lf", altitude_p);
 }
 
 
@@ -33,6 +38,11 @@ int main(int argc, char** argv)
 {
     ros::init(argc, argv, "offb_node");
     ros::NodeHandle nh("~");
+
+    dynamic_reconfigure::Server<px4_modules_test::fira_test_dynamic_cfgConfig> dyconfig_server;
+    dynamic_reconfigure::Server<px4_modules_test::fira_test_dynamic_cfgConfig>::CallbackType dyconfig_type;
+    dyconfig_type = boost::bind(&reconfig_cb, _1, _2);
+    dyconfig_server.setCallback(dyconfig_type);
 
     // The setpoint publishing rate MUST be faster than 2Hz
     ros::Rate rate(20);
@@ -97,12 +107,12 @@ int main(int argc, char** argv)
         cmd_vel.linear.x = pid_controller_x.output();
         cmd_vel.linear.y = pid_controller_y.output();
         cmd_vel.linear.z = pid_controller_z.output();
-        ROS_INFO("Cmd_vel X: %lf, Cmd_vel Y: %lf, Cmd_vel Z: %lf", cmd_vel.linear.x, cmd_vel.linear.y,
-                 cmd_vel.linear.z);
+        // ROS_INFO("Cmd_vel X: %lf, Cmd_vel Y: %lf, Cmd_vel Z: %lf", cmd_vel.linear.x, cmd_vel.linear.y,
+        //          cmd_vel.linear.z);
         cmd_vel.angular.x = 0;
         cmd_vel.angular.y = 0;
         cmd_vel.angular.z = pid_controller_yaw.output();
-        ROS_INFO("Yaw velocity output: %lf", cmd_vel.angular.z);
+        // ROS_INFO("Yaw velocity output: %lf", cmd_vel.angular.z);
         vwpp::PX4Interface::getInstance()->publishLocalVel(cmd_vel);
 
 
