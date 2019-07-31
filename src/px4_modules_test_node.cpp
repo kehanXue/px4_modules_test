@@ -27,6 +27,7 @@ mavros_msgs::State current_state;
 
 double_t altitude_p = 0;
 
+
 void reconfig_cb(px4_modules_test::fira_test_dynamic_cfgConfig &config, uint32_t level)
 {
     altitude_p = config.altitude_kp;
@@ -72,10 +73,10 @@ int main(int argc, char** argv)
 
 
     pid_controller_x.setTarget(0.);
-    pid_controller_y.setTarget(0.);
+    pid_controller_y.setTarget(-10.);
     pid_controller_z.setTarget(1.);
-    pid_controller_yaw.setTarget(vwpp::PX4Interface::getInstance()->getCurYaw());
-    // pid_controller_yaw.setTarget(vwpp::PX4Interface::getInstance()->getCurYaw() + M_PI);
+    // pid_controller_yaw.setTarget(vwpp::PX4Interface::getInstance()->getCurYaw());
+    pid_controller_yaw.setTarget(vwpp::PX4Interface::getInstance()->getCurYaw() + 3.5 * M_PI);
     // ROS_INFO("Target yaw: %lf", vwpp::PX4Interface::getInstance()->getCurYaw());
 
     // TODO rad
@@ -86,22 +87,24 @@ int main(int argc, char** argv)
 
         vwpp::PX4Interface::getInstance()->update();
 
-        if (fabs(vwpp::PX4Interface::getInstance()->getCurZ() - pid_controller_z.getTarget()) <= 0.10)
-        {
-            cnt++;
-            if (cnt >= 25)
-            {
-                pid_controller_x.setTarget(3.0);
-                cnt = 0;
-            }
-        }
+        // if (fabs(vwpp::PX4Interface::getInstance()->getCurZ() - pid_controller_z.getTarget()) <= 0.10)
+        // {
+        //     cnt++;
+        //     if (cnt >= 25)
+        //     {
+        //         pid_controller_x.setTarget(3.0);
+        //         cnt = 0;
+        //     }
+        // }
 
         pid_controller_x.update(vwpp::PX4Interface::getInstance()->getCurX());
         pid_controller_y.update(vwpp::PX4Interface::getInstance()->getCurY());
         pid_controller_z.update(vwpp::PX4Interface::getInstance()->getCurZ());
         pid_controller_yaw.update(convertCurYaw2FabsYawThetaBetweenPI(pid_controller_yaw.getTarget(),
-                                                                      vwpp::PX4Interface::getInstance()->getCurYaw()));
-        // ROS_INFO("Current yaw: %lf", vwpp::PX4Interface::getInstance()->getCurYaw());
+                                                                      vwpp::PX4Interface::getInstance()->getCurYaw() +
+                                                                      2 * M_PI));
+        ROS_INFO("Target yaw: %lf", pid_controller_yaw.getTarget());
+        ROS_INFO("Current yaw: %lf", vwpp::PX4Interface::getInstance()->getCurYaw());
 
         geometry_msgs::Twist cmd_vel;
         cmd_vel.linear.x = pid_controller_x.output();
@@ -112,11 +115,31 @@ int main(int argc, char** argv)
         cmd_vel.angular.x = 0;
         cmd_vel.angular.y = 0;
         cmd_vel.angular.z = pid_controller_yaw.output();
-        // ROS_INFO("Yaw velocity output: %lf", cmd_vel.angular.z);
-        vwpp::PX4Interface::getInstance()->publishLocalVel(cmd_vel);
+        ROS_INFO("Yaw velocity output: %lf", cmd_vel.angular.z);
+        // vwpp::PX4Interface::getInstance()->publishSetpointVel(cmd_vel);
 
 
-        geometry_msgs::Vector3Stamped linear_body_vel{};
+        mavros_msgs::PositionTarget position_target;
+        position_target.coordinate_frame = position_target.FRAME_LOCAL_NED;
+        position_target.type_mask =
+                position_target.IGNORE_AFX | position_target.IGNORE_AFY | position_target.IGNORE_AFZ |
+                // position_target.IGNORE_PX | position_target.IGNORE_PY | position_target.IGNORE_PZ |
+                // position_target.IGNORE_VX | position_target.IGNORE_VY | position_target.IGNORE_PZ |
+                position_target.IGNORE_YAW_RATE;
+        // position_target.velocity.x = pid_controller_x.output();
+        // position_target.velocity.y = pid_controller_y.output();
+        // position_target.velocity.z = pid_controller_z.output();
+        // position_target.position.x = pid_controller_x.getTarget();
+        // position_target.position.y = pid_controller_y.getTarget();
+        position_target.position.x = 10;
+        position_target.velocity.y = pid_controller_y.output();
+        position_target.position.z = pid_controller_z.getTarget();
+        position_target.yaw = pid_controller_yaw.getTarget();
+        // position_target.yaw_rate = pid_controller_yaw.output();
+        vwpp::PX4Interface::getInstance()->publishSetpointRaw(position_target);
+
+        geometry_msgs::Vector3Stamped
+                linear_body_vel{};
         linear_body_vel.header.stamp = ros::Time::now();
         linear_body_vel.header.frame_id = "camera_link";
         linear_body_vel.vector.x = 1.;

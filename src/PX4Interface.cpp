@@ -1,10 +1,9 @@
-#include <utility>
-
 //
 // Created by kehan on 19-7-17.
 //
 
 #include "PX4Interface.h"
+#include <utility>
 
 using namespace vwpp;
 
@@ -25,11 +24,14 @@ PX4Interface::PX4Interface() :
     px4_pose_sub = nh.subscribe<geometry_msgs::PoseStamped>
             ("/mavros/local_position/pose", 1, &PX4Interface::px4_pose_cb, this);
 
-    px4_vel_pub = nh.advertise<geometry_msgs::Twist>
+    px4_setpoint_vel_pub = nh.advertise<geometry_msgs::Twist>
             ("/mavros/setpoint_velocity/cmd_vel_unstamped", 1);
 
-    px4_pose_pub = nh.advertise<geometry_msgs::PoseStamped>
+    px4_setpoint_pose_pub = nh.advertise<geometry_msgs::PoseStamped>
             ("/mavros/setpoint_position/local", 10);
+
+    px4_setpoint_raw_pub = nh.advertise<mavros_msgs::PositionTarget>
+            ("/mavros/setpoint_raw/local", 1);
 
     // Wait for FCU connection
     while (ros::ok() && !px4_cur_state.connected)
@@ -126,7 +128,7 @@ int8_t PX4Interface::switchOffboard()
         temp_pose.pose.position.y = 0;
         temp_pose.pose.position.z = 1;
 
-        vwpp::PX4Interface::getInstance()->publishLocalPose(temp_pose);
+        vwpp::PX4Interface::getInstance()->publishSetpointPose(temp_pose);
         ros::spinOnce();
         loop_rate.sleep();
     }
@@ -158,7 +160,7 @@ int8_t PX4Interface::unlockVehicle()
         temp_pose.pose.position.x = 0;
         temp_pose.pose.position.y = 0;
         temp_pose.pose.position.z = 1;
-        vwpp::PX4Interface::getInstance()->publishLocalPose(temp_pose);
+        vwpp::PX4Interface::getInstance()->publishSetpointPose(temp_pose);
         ros::spinOnce();
         loop_rate.sleep();
     }
@@ -213,17 +215,32 @@ void PX4Interface::px4_pose_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
 }
 
 
-int8_t PX4Interface::publishLocalVel(const geometry_msgs::Twist &_vel)
+int8_t PX4Interface::publishSetpointVel(const geometry_msgs::Twist &_vel)
 {
-    boost::unique_lock<boost::mutex> uq_lock_vel(mutex_vel_pub);
-    this->px4_vel_pub.publish(_vel);
+    boost::unique_lock<boost::mutex> uq_lock_vel(mutex_cmd_pub);
+
+    ROS_INFO("%lf,%lf,%lf,%lf", _vel.linear.x, _vel.linear.y, _vel.linear.z, _vel.angular.z);
+    this->px4_setpoint_vel_pub.publish(_vel);
+
+    return 0;
 }
 
 
-int8_t PX4Interface::publishLocalPose(const geometry_msgs::PoseStamped &_pose)
+int8_t PX4Interface::publishSetpointPose(const geometry_msgs::PoseStamped &_pose)
 {
-    boost::unique_lock<boost::mutex> uq_lock_pose(mutex_vel_pose);
-    this->px4_pose_pub.publish(_pose);
+    boost::unique_lock<boost::mutex> uq_lock_pose(mutex_cmd_pub);
+    this->px4_setpoint_pose_pub.publish(_pose);
+
+    return 0;
+}
+
+
+int8_t PX4Interface::publishSetpointRaw(const mavros_msgs::PositionTarget &_position_target)
+{
+    boost::unique_lock<boost::mutex> uq_lock_raw(mutex_cmd_pub);
+    this->px4_setpoint_raw_pub.publish(_position_target);
+
+    return 0;
 }
 
 

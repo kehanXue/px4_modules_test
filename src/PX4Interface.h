@@ -11,6 +11,7 @@
 #include <mavros_msgs/State.h>
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/CommandBool.h>
+#include <mavros_msgs/PositionTarget.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <tf/transform_datatypes.h>
@@ -36,13 +37,16 @@ namespace vwpp
         double_t getCurYaw();
 
         double_t getCurX();
+
         double_t getCurY();
+
         double_t getCurZ();
 
-        int8_t publishLocalVel(const geometry_msgs::Twist &_vel);
+        int8_t publishSetpointVel(const geometry_msgs::Twist &_vel);
 
-        int8_t publishLocalPose(const geometry_msgs::PoseStamped &_pose);
+        int8_t publishSetpointPose(const geometry_msgs::PoseStamped &_pose);
 
+        int8_t publishSetpointRaw(const mavros_msgs::PositionTarget &_position_target);
 
     private:
 
@@ -67,11 +71,11 @@ namespace vwpp
         ros::ServiceClient px4_arming_client;
         ros::ServiceClient px4_set_mode_client;
         ros::Subscriber px4_pose_sub;
-        ros::Publisher px4_vel_pub;
-        ros::Publisher px4_pose_pub;
+        ros::Publisher px4_setpoint_vel_pub;
+        ros::Publisher px4_setpoint_pose_pub;
+        ros::Publisher px4_setpoint_raw_pub;
 
-        boost::mutex mutex_vel_pub;
-        boost::mutex mutex_vel_pose;
+        boost::mutex mutex_cmd_pub;
 
         mavros_msgs::State px4_cur_state;
         mavros_msgs::SetMode px4_offb_set_mode;
