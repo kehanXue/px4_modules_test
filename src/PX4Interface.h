@@ -20,6 +20,22 @@
 
 namespace vwpp
 {
+    struct TargetVelXYPosZYaw
+    {
+        double_t vx;
+        double_t vy;
+        double_t pz;
+        double_t yaw;
+    };
+
+    struct TargetPosXYZYaw
+    {
+        double_t px;
+        double_t py;
+        double_t pz;
+        double_t yaw;
+    };
+
     class PX4Interface
     {
     public:
@@ -46,7 +62,11 @@ namespace vwpp
 
         int8_t publishSetpointPose(const geometry_msgs::PoseStamped &_pose);
 
-        int8_t publishSetpointRaw(const mavros_msgs::PositionTarget &_position_target);
+        int8_t publishSetpointRaw(const mavros_msgs::PositionTarget _position_target);
+
+        int8_t publishTarget(const TargetPosXYZYaw _target_pos_xyz_yaw);
+
+        int8_t publishTarget(const TargetVelXYPosZYaw _target_vel_xy_pos_z_yaw);
 
     private:
 

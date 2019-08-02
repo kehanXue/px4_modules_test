@@ -235,14 +235,55 @@ int8_t PX4Interface::publishSetpointPose(const geometry_msgs::PoseStamped &_pose
 }
 
 
-int8_t PX4Interface::publishSetpointRaw(const mavros_msgs::PositionTarget &_position_target)
+int8_t PX4Interface::publishTarget(const TargetPosXYZYaw _target_pos_xyz_yaw)
+{
+
+    mavros_msgs::PositionTarget position_target;
+    position_target.coordinate_frame = position_target.FRAME_LOCAL_NED;
+    position_target.type_mask =
+            position_target.IGNORE_AFX | position_target.IGNORE_AFY | position_target.IGNORE_AFZ |
+            // position_target.IGNORE_PX | position_target.IGNORE_PY | position_target.IGNORE_PZ |
+            position_target.IGNORE_VZ | position_target.IGNORE_VY | position_target.IGNORE_VZ |
+            position_target.IGNORE_YAW_RATE;
+
+    position_target.position.x = _target_pos_xyz_yaw.px;
+    position_target.position.y = _target_pos_xyz_yaw.py;
+    position_target.position.z = _target_pos_xyz_yaw.pz;
+    position_target.yaw = _target_pos_xyz_yaw.yaw;
+
+    boost::unique_lock<boost::mutex> uq_lock_raw(mutex_cmd_pub);
+    this->px4_setpoint_raw_pub.publish(position_target);
+    return 0;
+}
+
+
+int8_t PX4Interface::publishTarget(const TargetVelXYPosZYaw _target_vel_xy_pos_z_yaw)
+{
+    mavros_msgs::PositionTarget position_target;
+    position_target.coordinate_frame = position_target.FRAME_LOCAL_NED;
+    position_target.type_mask =
+            position_target.IGNORE_AFX | position_target.IGNORE_AFY | position_target.IGNORE_AFZ |
+            position_target.IGNORE_PX | position_target.IGNORE_PY | // position_target.IGNORE_PZ |
+            // position_target.IGNORE_VZ | position_target.IGNORE_VY | position_target.IGNORE_VZ |
+            position_target.IGNORE_YAW_RATE;
+
+    position_target.velocity.x = _target_vel_xy_pos_z_yaw.vx;
+    position_target.velocity.y = _target_vel_xy_pos_z_yaw.vy;
+    position_target.position.z = _target_vel_xy_pos_z_yaw.pz;
+    position_target.yaw = _target_vel_xy_pos_z_yaw.yaw;
+
+    boost::unique_lock<boost::mutex> uq_lock_raw(mutex_cmd_pub);
+    this->px4_setpoint_raw_pub.publish(position_target);
+    return 0;
+}
+
+
+int8_t PX4Interface::publishSetpointRaw(const mavros_msgs::PositionTarget _position_target)
 {
     boost::unique_lock<boost::mutex> uq_lock_raw(mutex_cmd_pub);
     this->px4_setpoint_raw_pub.publish(_position_target);
 
     return 0;
 }
-
-
 
 

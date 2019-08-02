@@ -37,6 +37,18 @@ void reconfig_cb(px4_modules_test::fira_test_dynamic_cfgConfig &config, uint32_t
 
 int main(int argc, char** argv)
 {
+    // std::cout << "__       __"   << std::endl <<
+    //           "\\ \\     / /" << std::endl <<
+    //           " \\ \\   / / " << std::endl <<
+    //           "  \\ \\_/ /  " << std::endl <<
+    //           "   \\___/   " << std::endl;
+    //
+    std::cout << R"(__       __  _        __        _  | ___ \  | ___ \)" << std::endl <<
+                 R"(\ \     / /  \\      //\\      //  | |_/ /  | |_/ / )" << std::endl <<
+                 R"( \ \   / /    \\    //  \\    //   |  __/   |  __/   )" << std::endl <<
+                 R"(  \ \_/ /      \\  //    \\  //    | |      | |       )" << std::endl <<
+                 R"(   \___/        \\//      \\//     \_|      \_|     )" << std::endl;
+
     ros::init(argc, argv, "offb_node");
     ros::NodeHandle nh("~");
 
@@ -74,9 +86,9 @@ int main(int argc, char** argv)
 
     pid_controller_x.setTarget(0.);
     pid_controller_y.setTarget(-10.);
-    pid_controller_z.setTarget(1.);
-    // pid_controller_yaw.setTarget(vwpp::PX4Interface::getInstance()->getCurYaw());
-    pid_controller_yaw.setTarget(vwpp::PX4Interface::getInstance()->getCurYaw() + 3.5 * M_PI);
+    pid_controller_z.setTarget(0.5);
+    pid_controller_yaw.setTarget(vwpp::PX4Interface::getInstance()->getCurYaw());
+    // pid_controller_yaw.setTarget(vwpp::PX4Interface::getInstance()->getCurYaw() + 3.5 * M_PI);
     // ROS_INFO("Target yaw: %lf", vwpp::PX4Interface::getInstance()->getCurYaw());
 
     // TODO rad
@@ -123,20 +135,34 @@ int main(int argc, char** argv)
         position_target.coordinate_frame = position_target.FRAME_LOCAL_NED;
         position_target.type_mask =
                 position_target.IGNORE_AFX | position_target.IGNORE_AFY | position_target.IGNORE_AFZ |
-                // position_target.IGNORE_PX | position_target.IGNORE_PY | position_target.IGNORE_PZ |
-                // position_target.IGNORE_VX | position_target.IGNORE_VY | position_target.IGNORE_PZ |
+                // position_target.IGNORE_PX | position_target.IGNORE_PY |
+                position_target.IGNORE_PZ |
+                // position_target.IGNORE_VZ |
+                // position_target.IGNORE_VY | position_target.IGNORE_VX |
                 position_target.IGNORE_YAW_RATE;
-        // position_target.velocity.x = pid_controller_x.output();
-        // position_target.velocity.y = pid_controller_y.output();
-        // position_target.velocity.z = pid_controller_z.output();
+        position_target.velocity.x = pid_controller_x.output();
+        position_target.velocity.y = pid_controller_y.output();
+        position_target.velocity.z = pid_controller_z.output();
         // position_target.position.x = pid_controller_x.getTarget();
         // position_target.position.y = pid_controller_y.getTarget();
-        position_target.position.x = 10;
-        position_target.velocity.y = pid_controller_y.output();
-        position_target.position.z = pid_controller_z.getTarget();
+        // position_target.position.z = pid_controller_z.getTarget();
         position_target.yaw = pid_controller_yaw.getTarget();
         // position_target.yaw_rate = pid_controller_yaw.output();
         vwpp::PX4Interface::getInstance()->publishSetpointRaw(position_target);
+
+        // vwpp::TargetPosXYZYaw target_pos_xyz_yaw{};
+        // target_pos_xyz_yaw.px = pid_controller_x.getTarget();
+        // target_pos_xyz_yaw.py = pid_controller_y.getTarget();
+        // target_pos_xyz_yaw.pz = pid_controller_z.getTarget();
+        // target_pos_xyz_yaw.yaw = pid_controller_yaw.getTarget();
+        // vwpp::PX4Interface::getInstance()->publishTarget(target_pos_xyz_yaw);
+
+        // vwpp::TargetVelXYPosZYaw target_vel_xy_pos_z_yaw{};
+        // target_vel_xy_pos_z_yaw.vx = pid_controller_x.output();
+        // target_vel_xy_pos_z_yaw.vy = pid_controller_y.output();
+        // target_vel_xy_pos_z_yaw.pz = pid_controller_z.getTarget();
+        // target_vel_xy_pos_z_yaw.yaw = pid_controller_yaw.getTarget();
+        // vwpp::PX4Interface::getInstance()->publishTarget(target_vel_xy_pos_z_yaw);
 
         geometry_msgs::Vector3Stamped
                 linear_body_vel{};
